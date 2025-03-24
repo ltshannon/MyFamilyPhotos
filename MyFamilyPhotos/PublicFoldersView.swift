@@ -1,0 +1,124 @@
+//
+//  PublicFolders.swift
+//  MyFamilyPhotos
+//
+//  Created by Larry Shannon on 3/17/25.
+//
+
+import SwiftUI
+import Firebase
+import FirebaseAuth
+import FirebaseFirestore
+import FirebaseStorage
+
+struct PublicFoldersView: View {
+    @EnvironmentObject var firebaseService: FirebaseService
+    @State var selectedItem: PublicFolderInfo = PublicFolderInfo(name: "", ownerId: "")
+    @State var showingGetNameAlert = false
+    @State var showingNameEmptyAlert = false
+    @State var showingErrorAlert: Bool = false
+    @State var showingDeleteAlert = false
+    @State var showingEditDescriptionAlert = false
+    @State var newFolderName: String = ""
+    @State var errorString: String = ""
+    @State var newName = ""
+    let database = Firestore.firestore()
+    
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(firebaseService.publicFolderInfos, id: \.id) { item in
+                    HStack {
+                        NavigationLink(item.name) {
+                            PublicCarouselView(publicFolder: item)
+                        }
+                    }
+                    .swipeActions(allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            selectedItem = item
+                            showingDeleteAlert = true
+                        } label: {
+                            Label("Delete", systemImage: "trash.fill")
+                        }
+                        Button {
+                            selectedItem = item
+                            newName = item.name
+                            showingEditDescriptionAlert = true
+                        } label: {
+                            Text("Edit Description")
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Public Photos")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingGetNameAlert = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "plus.app")
+                                .resizable()
+                                .scaledToFit()
+                        }
+                    }
+                }
+            }
+            .alert("Name of Public Folder", isPresented: $showingGetNameAlert) {
+                TextField("", text: $newFolderName)
+                    .keyboardType(.default)
+                Button("OK") {
+                    if newFolderName.isEmpty == true {
+                        showingNameEmptyAlert = true
+                        return
+                    }
+                    Task {
+                        if let error = await firebaseService.createFolder(name: newFolderName, folderName: "publicFolders", isPublic: true) {
+                            errorString = error
+                            showingErrorAlert = true
+                        }
+                        newFolderName = ""
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Enter a name")
+            }
+            .alert("You need to add a name", isPresented: $showingNameEmptyAlert) {
+                Button("Cancel", role: .cancel) {
+                    showingGetNameAlert = true
+                }
+            }
+            .alert(errorString, isPresented: $showingErrorAlert) {
+                Button("Cancel", role: .cancel) { }
+            }
+            .alert("Are you sure you want to delete this?", isPresented: $showingDeleteAlert) {
+                Button("OK", role: .destructive) {
+                    Task {
+                        await firebaseService.deleteFolder(item: selectedItem)
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
+            }
+            .alert("Edit Description", isPresented: $showingEditDescriptionAlert) {
+                TextField(selectedItem.name, text: $newName)
+                    .keyboardType(.default)
+                Button("OK") {
+                    Task {
+                        if let error = await firebaseService.editFolderDescription(item: selectedItem, newName: newName) {
+                            errorString = error
+                            showingErrorAlert = true
+                        }
+                        newName = ""
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Enter a new description")
+            }
+        }
+    }
+    
+}
+

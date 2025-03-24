@@ -18,16 +18,21 @@ struct HomeView: View {
                     Label("Photos", systemImage: "photo")
                 }
                 .tag(1)
+            PublicFoldersView()
+                .tabItem {
+                    Label("Public Photos", systemImage: "folder")
+                }
+                .tag(2)
             SelectPhotoView()
                 .tabItem {
                     Label("Upload", systemImage: "square.and.arrow.up")
                 }
-                .tag(2)
+                .tag(3)
             SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gear")
                 }
-                .tag(3)
+                .tag(4)
         }
         .onAppear {
             if firstTime {
