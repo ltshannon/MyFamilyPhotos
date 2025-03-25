@@ -14,6 +14,7 @@ import FirebaseStorage
 struct DisplayPhotoView: View {
     @EnvironmentObject var appNavigationState: AppNavigationState
     @EnvironmentObject var firebaseService: FirebaseService
+    @EnvironmentObject var settingsService: SettingsService
     @State var firstTime = true
     @State var showingEditDescriptionAlert = false
     @State var showingMissingPhotoAlert = false
@@ -22,11 +23,13 @@ struct DisplayPhotoView: View {
     @State var showingAddToPublicFolderSheet = false
     @State var showingNameEmptyAlert = false
     @State var showingFolderExistsAlert: Bool = false
+    @State var showingFirstTimeAlert: Bool = false
     @State var newDescription = ""
     @State var newFolderName: String = ""
     @State var errorString: String = ""
     @State var selectedItem: PhotoInfo = PhotoInfo(id: "", userfolder: "", description: "", userId: "")
     @State var folderImageURL: URL?
+    @AppStorage("firstLaunch") var firstLaunch: Bool = true
     let database = Firestore.firestore()
     
     var body: some View {
@@ -155,13 +158,21 @@ struct DisplayPhotoView: View {
             .alert(errorString, isPresented: $showingFolderExistsAlert) {
                 Button("Cancel", role: .cancel) { }
             }
+            .alert("To get started use the '+' button in the top right corner to create your first folder to upload photos too.", isPresented: $showingFirstTimeAlert) {
+                Button("Cancel", role: .cancel) { }
+            }
         }
         .onAppear {
             if firstTime == true {
                 Task {
                     await firebaseService.listenerForUserPhotos()
                     await firebaseService.listenerForPublicFolders()
+                    firstTime = false
                 }
+            }
+            if firstLaunch == true {
+                showingFirstTimeAlert = true
+                firstLaunch = false
             }
         }
     }

@@ -11,6 +11,7 @@ import SwiftUI
 struct MyFamilyPhotosApp: App {
     @StateObject var appNavigationState = AppNavigationState()
     @StateObject var firebaseService = FirebaseService.shared
+    @StateObject var settingsService = SettingsService.shared
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     var body: some Scene {
@@ -18,6 +19,7 @@ struct MyFamilyPhotosApp: App {
             ContentView()
                 .environmentObject(appNavigationState)
                 .environmentObject(firebaseService)
+                .environmentObject(settingsService)
                 .configureFirebaseSignInWithAppleWith(firestoreUserCollectionPath: Path.Firestore.profiles)
         }
     }

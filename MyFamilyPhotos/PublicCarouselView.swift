@@ -12,8 +12,13 @@ struct PublicCarouselView: View {
     var publicFolder: PublicFolderInfo
     @State var photoInfos: [PhotoInfo] = []
     @State private var scrollID: Int?
+    
+    init(parameters: PublicPhotosCarouselParameters) {
+        publicFolder = parameters.item
+    }
+    
     var body: some View {
-        NavigationStack {
+//        NavigationStack {
             VStack(alignment: .center) {
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: 0) {
@@ -56,7 +61,7 @@ struct PublicCarouselView: View {
                 }
             }
         }
-    }
+//    }
 }
 
 struct IndicatorView: View {

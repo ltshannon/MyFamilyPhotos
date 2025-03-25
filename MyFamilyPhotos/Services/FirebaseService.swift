@@ -226,9 +226,6 @@ class FirebaseService: ObservableObject {
             return "Please log in"
         }
         if item.name != newName {
-            guard let documentId = item.id else {
-                return "Please log in"
-            }
             do {
                 if publicFolderInfos.filter( {$0.name == newName} ).count > 0 {
                     return "Folder name already being used"

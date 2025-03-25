@@ -12,40 +12,55 @@ import FirebaseFirestore
 import FirebaseStorage
 
 struct PublicFoldersView: View {
+    @EnvironmentObject var appNavigationState: AppNavigationState
     @EnvironmentObject var firebaseService: FirebaseService
+    @EnvironmentObject var settingsService: SettingsService
     @State var selectedItem: PublicFolderInfo = PublicFolderInfo(name: "", ownerId: "")
     @State var showingGetNameAlert = false
     @State var showingNameEmptyAlert = false
     @State var showingErrorAlert: Bool = false
     @State var showingDeleteAlert = false
     @State var showingEditDescriptionAlert = false
+    @State var showingFullScreenCover = false
     @State var newFolderName: String = ""
     @State var errorString: String = ""
     @State var newName = ""
     let database = Firestore.firestore()
     
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $appNavigationState.photosPublicNavigation) {
             List {
                 ForEach(firebaseService.publicFolderInfos, id: \.id) { item in
                     HStack {
-                        NavigationLink(item.name) {
-                            PublicCarouselView(publicFolder: item)
+                        Text(item.name)
+                        Spacer()
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        if settingsService.carouseAutomaticDisplayState == true {
+                            selectedItem = item
+                            showingFullScreenCover = true
+                        }
+                        else {
+                            let parameters = PublicPhotosCarouselParameters(item: item)
+                            appNavigationState.publicPhotosCarouselView(parameters: parameters)
                         }
                     }
                     .swipeActions(allowsFullSwipe: false) {
-                        Button(role: .destructive) {
-                            selectedItem = item
-                            showingDeleteAlert = true
-                        } label: {
-                            Label("Delete", systemImage: "trash.fill")
-                        }
-                        Button {
-                            selectedItem = item
-                            newName = item.name
-                            showingEditDescriptionAlert = true
-                        } label: {
-                            Text("Edit Description")
+                        if item.ownerId == Auth.auth().currentUser!.uid {
+                            Button(role: .destructive) {
+                                selectedItem = item
+                                showingDeleteAlert = true
+                            } label: {
+                                Label("Delete", systemImage: "trash.fill")
+                            }
+                            Button {
+                                selectedItem = item
+                                newName = item.name
+                                showingEditDescriptionAlert = true
+                            } label: {
+                                Text("Edit Description")
+                            }
                         }
                     }
                 }
@@ -64,6 +79,51 @@ struct PublicFoldersView: View {
                         }
                     }
                 }
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button {
+                            settingsService.toggleCarouseAutomaticDisplay()
+                        } label: {
+                            Label("Automatic Display Photos", systemImage: settingsService.carouseAutomaticDisplayState == true ? "checkmark.circle" : "circle")
+                        }
+                        Menu("Time interval") {
+                            Button {
+                                settingsService.setTimerInterval(timerInterval: TimerInterval.twoSeconds)
+                            } label: {
+                                Label("\(TimerInterval.twoSeconds.rawValue) Seconds", systemImage: settingsService.timerInterval == TimerInterval.twoSeconds ? "checkmark.circle" : "circle")
+                            }
+                            Button {
+                                settingsService.setTimerInterval(timerInterval: TimerInterval.fiveSeconds)
+                            } label: {
+                                Label("\(TimerInterval.fiveSeconds.rawValue) Seconds", systemImage: settingsService.timerInterval == TimerInterval.fiveSeconds ? "checkmark.circle" : "circle")
+                            }
+                            Button {
+                                settingsService.setTimerInterval(timerInterval: TimerInterval.tenSeconds)
+                            } label: {
+                                Label("\(TimerInterval.tenSeconds.rawValue) Seconds", systemImage: settingsService.timerInterval == TimerInterval.tenSeconds ? "checkmark.circle" : "circle")
+                            }
+                        }
+                        Button {
+                            
+                        } label: {
+                            Text("Cancel")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
+            }
+            .navigationDestination(for: PublicPhotosNavDestination.self) { state in
+                switch state {
+                case .publicPhotosTabCarouselView(let parameters):
+                    PublicTabCarouselView(parameters: parameters)
+                case .publicPhotosCarouselView(let parameters):
+                    PublicCarouselView(parameters: parameters)
+                }
+            }
+            .fullScreenCover(isPresented: $showingFullScreenCover) {
+                let parameters = PublicPhotosTabCarouselParameters(item: selectedItem)
+                PublicTabCarouselView(parameters: parameters)
             }
             .alert("Name of Public Folder", isPresented: $showingGetNameAlert) {
                 TextField("", text: $newFolderName)
