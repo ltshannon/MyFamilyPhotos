@@ -61,7 +61,7 @@ struct DisplayPhotoView: View {
                             selectedItem = item
                             showingAddToPublicFolderSheet = true
                         } label: {
-                            Text("Edit Public Folder Access")
+                            Text("Access")
                         }
                         .tint(.orange)
                         Button {
@@ -77,7 +77,7 @@ struct DisplayPhotoView: View {
                         newDescription = item.description
                         showingEditDescriptionAlert = true
                     } label: {
-                        Text("Edit Description")
+                        Text("Edit")
                     }
                     .tint(.indigo)
                     Button(role: .destructive) {
